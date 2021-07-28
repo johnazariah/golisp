@@ -2,6 +2,10 @@ package golisp
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+
+	"github.com/araddon/dateparse"
 )
 
 func parseSExpr(tokenizer *tokenizerContext, tok *token, into *list) (SExpr, error) {
@@ -14,8 +18,32 @@ func parseSExpr(tokenizer *tokenizerContext, tok *token, into *list) (SExpr, err
 	case TOK_COMMENT:
 		break
 
-	case TOK_SYMBOL, TOK_QUOTEDSTRING:
-		into.children = append(into.children, &atom{rawValue: tok.rawValue(tokenizer)})
+	case TOK_QUOTEDSTRING:
+		a := &atom{rawValue: tok.rawValue(tokenizer)}
+		a.typedValue = Variant{VariantType: VAR_STRING, VariantValue: strings.Trim(a.rawValue, "\"")}
+		into.children = append(into.children, a)
+
+	case TOK_SYMBOL:
+		a := &atom{rawValue: tok.rawValue(tokenizer)}
+
+		// date in any format - dd/mm and mm/dd are both parsed as mm/dd because USA! :)
+		if d, e := dateparse.ParseAny(a.rawValue); e == nil {
+			a.typedValue = Variant{VariantType: VAR_DATE, VariantValue: d}
+		} else if i, e := strconv.ParseInt(a.rawValue, 0, 64); e == nil {
+			// int64
+			a.typedValue = Variant{VariantType: VAR_INT, VariantValue: i}
+		} else if f, e := strconv.ParseFloat(a.rawValue, 64); e == nil {
+			// float64
+			a.typedValue = Variant{VariantType: VAR_FLOAT, VariantValue: f}
+		} else if b, e := strconv.ParseBool(a.rawValue); e == nil {
+			// bool
+			a.typedValue = Variant{VariantType: VAR_BOOL, VariantValue: b}
+		} else {
+			// identifier
+			a.typedValue = Variant{VariantType: VAR_IDENT, VariantValue: a.rawValue}
+		}
+
+		into.children = append(into.children, a)
 
 	case TOK_LPAREN:
 		child := &list{children: []SExpr{}}
