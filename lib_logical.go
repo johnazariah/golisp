@@ -3,149 +3,66 @@ package golisp
 type LogicalLibrary struct {
 }
 
-func (l *LogicalLibrary) ensureBooleanArgs(args []Variant, functionName string) error {
-	return ensureArgumentTypesMatch(args, []EnumVariantType{VAR_BOOL, VAR_INT}, []EnumVariantType{}, functionName)
-}
-
-func (l *LogicalLibrary) xor(args []Variant) Variant {
-	functionName := "xor"
-
-	if e := ensureMinimimArity(args, 2, functionName); e != nil {
-		return Variant{VariantType: VAR_ERROR, VariantValue: e}
-	}
-
-	if e := ensureMaximumArity(args, 2, functionName); e != nil {
-		return Variant{VariantType: VAR_ERROR, VariantValue: e}
-	}
-
-	if e := l.ensureBooleanArgs(args, functionName); e != nil {
-		return Variant{VariantType: VAR_ERROR, VariantValue: e}
-	}
-
-	v0, e := args[0].ExtractBool()
-	if e != nil {
-		return Variant{VariantType: VAR_ERROR, VariantValue: e}
-	}
-	v1, e := args[1].ExtractBool()
-	if e != nil {
-		return Variant{VariantType: VAR_ERROR, VariantValue: e}
-	}
-
-	res := v1 != v0
-	return Variant{VariantType: VAR_BOOL, VariantValue: res}
+func (l *LogicalLibrary) not(args []Variant) Variant {
+	return unaryOpBoolean(
+		args,
+		func(a bool) bool { return !a },
+		"not",
+	)
 }
 
 func (l *LogicalLibrary) and(args []Variant) Variant {
-	functionName := "and"
-
-	if e := ensureMinimimArity(args, 2, functionName); e != nil {
-		return Variant{VariantType: VAR_ERROR, VariantValue: e}
-	}
-
-	if e := l.ensureBooleanArgs(args, functionName); e != nil {
-		return Variant{VariantType: VAR_ERROR, VariantValue: e}
-	}
-
-	v, e := args[0].ExtractBool()
-	if e != nil {
-		return Variant{VariantType: VAR_ERROR, VariantValue: e}
-	}
-	res := v
-	for _, a := range args[1:] {
-		v, e := a.ExtractBool()
-		if e != nil {
-			return Variant{VariantType: VAR_ERROR, VariantValue: e}
-		}
-		res = res && v
-	}
-	return Variant{VariantType: VAR_BOOL, VariantValue: res}
-}
-
-func (l *LogicalLibrary) or(args []Variant) Variant {
-	functionName := "or"
-
-	if e := ensureMinimimArity(args, 2, functionName); e != nil {
-		return Variant{VariantType: VAR_ERROR, VariantValue: e}
-	}
-
-	if e := l.ensureBooleanArgs(args, functionName); e != nil {
-		return Variant{VariantType: VAR_ERROR, VariantValue: e}
-	}
-
-	v, e := args[0].ExtractBool()
-	if e != nil {
-		return Variant{VariantType: VAR_ERROR, VariantValue: e}
-	}
-	res := v
-	for _, a := range args[1:] {
-		v, e := a.ExtractBool()
-		if e != nil {
-			return Variant{VariantType: VAR_ERROR, VariantValue: e}
-		}
-		res = res || v
-	}
-	return Variant{VariantType: VAR_BOOL, VariantValue: res}
-}
-
-func (l *LogicalLibrary) not(args []Variant) Variant {
-	functionName := "not"
-
-	if e := ensureExactArity(args, 1, functionName); e != nil {
-		return Variant{VariantType: VAR_ERROR, VariantValue: e}
-	}
-
-	if e := l.ensureBooleanArgs(args, functionName); e != nil {
-		return Variant{VariantType: VAR_ERROR, VariantValue: e}
-	}
-
-	v, e := args[0].ExtractBool()
-	if e != nil {
-		return Variant{VariantType: VAR_ERROR, VariantValue: e}
-	}
-	res := !v
-
-	return Variant{VariantType: VAR_BOOL, VariantValue: res}
-}
-
-func (l *LogicalLibrary) nor(args []Variant) Variant {
-	functionName := "nor"
-
-	if e := ensureMinimimArity(args, 2, functionName); e != nil {
-		return Variant{VariantType: VAR_ERROR, VariantValue: e}
-	}
-
-	if e := l.ensureBooleanArgs(args, functionName); e != nil {
-		return Variant{VariantType: VAR_ERROR, VariantValue: e}
-	}
-	return l.not([]Variant{l.or(args)})
+	return foldBooleans(
+		args,
+		func(a bool, b bool) bool { return a && b },
+		"and",
+	)
 }
 
 func (l *LogicalLibrary) nand(args []Variant) Variant {
-	functionName := "nand"
+	temp := foldBooleans(
+		args,
+		func(a bool, b bool) bool { return a && b },
+		"nand",
+	)
 
-	if e := ensureMinimimArity(args, 2, functionName); e != nil {
-		return Variant{VariantType: VAR_ERROR, VariantValue: e}
-	}
+	return l.not([]Variant{temp})
+}
 
-	if e := l.ensureBooleanArgs(args, functionName); e != nil {
-		return Variant{VariantType: VAR_ERROR, VariantValue: e}
-	}
+func (l *LogicalLibrary) or(args []Variant) Variant {
+	return foldBooleans(
+		args,
+		func(a bool, b bool) bool { return a || b },
+		"or",
+	)
+}
 
-	return l.not([]Variant{l.and(args)})
+func (l *LogicalLibrary) nor(args []Variant) Variant {
+	temp := foldBooleans(
+		args,
+		func(a bool, b bool) bool { return a || b },
+		"nor",
+	)
+
+	return l.not([]Variant{temp})
+}
+
+func (l *LogicalLibrary) xor(args []Variant) Variant {
+	return binaryOpBoolean(
+		args,
+		func(a bool, b bool) bool { return a != b },
+		"xor",
+	)
 }
 
 func (l *LogicalLibrary) xnor(args []Variant) Variant {
-	functionName := "xnor"
+	temp := binaryOpBoolean(
+		args,
+		func(a bool, b bool) bool { return a != b },
+		"xnor",
+	)
 
-	if e := ensureMinimimArity(args, 2, functionName); e != nil {
-		return Variant{VariantType: VAR_ERROR, VariantValue: e}
-	}
-
-	if e := l.ensureBooleanArgs(args, functionName); e != nil {
-		return Variant{VariantType: VAR_ERROR, VariantValue: e}
-	}
-
-	return l.not([]Variant{l.xor(args)})
+	return l.not([]Variant{temp})
 }
 
 func (l *LogicalLibrary) InjectFunctions(functions FunctionTable) FunctionTable {
@@ -156,5 +73,9 @@ func (l *LogicalLibrary) InjectFunctions(functions FunctionTable) FunctionTable 
 	functions["xor"] = l.xor
 	functions["xnor"] = l.xnor
 	functions["not"] = l.not
+	functions["||"] = l.or
+	functions["&&"] = l.and
+	functions["^^"] = l.xor
+	functions["!"] = l.not
 	return functions
 }

@@ -15,7 +15,7 @@ type EvaluationContext struct {
 }
 
 func loadDefaultLibraries(functions FunctionTable) FunctionTable {
-	functions = (&AdditionLibrary{}).InjectFunctions(functions)
+	functions = (&ArithmeticLibrary{}).InjectFunctions(functions)
 	functions = (&LogicalLibrary{}).InjectFunctions(functions)
 	return functions
 }

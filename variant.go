@@ -20,6 +20,33 @@ const (
 	VAR_MAX
 )
 
+func (t EnumVariantType) String() string {
+	switch t {
+	case VAR_NULL:
+		return "VAR_NULL"
+	case VAR_DATE:
+		return "VAR_DATE"
+	case VAR_BOOL:
+		return "VAR_BOOL"
+	case VAR_FLOAT:
+		return "VAR_FLOAT"
+	case VAR_INT:
+		return "VAR_INT"
+	case VAR_STRING:
+		return "VAR_STRING"
+	case VAR_IDENT:
+		return "VAR_IDENT"
+	case VAR_ERROR:
+		return "VAR_ERROR"
+	case VAR_MAX:
+		return "VAR_MAX"
+	case VAR_UNKNOWN:
+		return "VAR_UNKNOWN"
+	}
+
+	panic("unknown value for EnumVariantType")
+}
+
 type Variant struct {
 	VariantType  EnumVariantType
 	VariantValue interface{}

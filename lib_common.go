@@ -65,9 +65,256 @@ func ensureArgumentTypesMatch(args []Variant, acceptableTypes []EnumVariantType,
 		}
 
 		if !found {
-			return fmt.Errorf("type error: argument of unacceptable type %q passed to %q", a.VariantType, functionName)
+			return fmt.Errorf("type error: argument of unacceptable type %q passed to %q", a.VariantType.String(), functionName)
 		}
 	}
 
 	return nil
+}
+
+func ensureBooleanArgs(args []Variant, functionName string) error {
+	return ensureArgumentTypesMatch(args, []EnumVariantType{VAR_BOOL, VAR_INT}, []EnumVariantType{}, functionName)
+}
+
+func unaryOpBoolean(args []Variant, unaryOp func(bool) bool, functionName string) Variant {
+	if e := ensureExactArity(args, 1, functionName); e != nil {
+		return Variant{VariantType: VAR_ERROR, VariantValue: e}
+	}
+
+	if e := ensureBooleanArgs(args, functionName); e != nil {
+		return Variant{VariantType: VAR_ERROR, VariantValue: e}
+	}
+
+	v0, e := args[0].ExtractBool()
+	if e != nil {
+		return Variant{VariantType: VAR_ERROR, VariantValue: e}
+	}
+
+	res := unaryOp(v0)
+
+	return Variant{VariantType: VAR_BOOL, VariantValue: res}
+}
+
+func binaryOpBoolean(args []Variant, binaryOp func(bool, bool) bool, functionName string) Variant {
+	if e := ensureExactArity(args, 2, functionName); e != nil {
+		return Variant{VariantType: VAR_ERROR, VariantValue: e}
+	}
+
+	if e := ensureBooleanArgs(args, functionName); e != nil {
+		return Variant{VariantType: VAR_ERROR, VariantValue: e}
+	}
+
+	return foldBooleans(args, binaryOp, functionName)
+}
+
+func foldBooleans(args []Variant, bool_folder func(bool, bool) bool, functionName string) Variant {
+	if e := ensureMinimimArity(args, 2, functionName); e != nil {
+		return Variant{VariantType: VAR_ERROR, VariantValue: e}
+	}
+
+	if e := ensureBooleanArgs(args, functionName); e != nil {
+		return Variant{VariantType: VAR_ERROR, VariantValue: e}
+	}
+
+	v, e := args[0].ExtractBool()
+	if e != nil {
+		return Variant{VariantType: VAR_ERROR, VariantValue: e}
+	}
+	res := v
+	for _, a := range args[1:] {
+		v, e := a.ExtractBool()
+		if e != nil {
+			return Variant{VariantType: VAR_ERROR, VariantValue: e}
+		}
+		res = bool_folder(res, v)
+	}
+
+	return Variant{VariantType: VAR_BOOL, VariantValue: res}
+}
+
+func ensureNumberArgs(args []Variant, functionName string) error {
+	return ensureArgumentTypesMatch(args, []EnumVariantType{VAR_BOOL, VAR_INT, VAR_FLOAT}, []EnumVariantType{}, functionName)
+}
+
+func getPromotedNumberType(args []Variant, functionName string) (EnumVariantType, error) {
+	resultValueType := VAR_UNKNOWN
+	for _, a := range args {
+		if e := ensureTypeIsNotInvalid(a); e != nil {
+			return VAR_ERROR, e
+		}
+
+		switch a.VariantType {
+		case VAR_BOOL, VAR_INT:
+			if (resultValueType == VAR_UNKNOWN) || (resultValueType == VAR_INT) {
+				resultValueType = VAR_INT
+				continue
+			}
+
+		case VAR_FLOAT:
+			if (resultValueType == VAR_UNKNOWN) || (resultValueType == VAR_INT) || (resultValueType == VAR_BOOL) || (resultValueType == VAR_FLOAT) {
+				resultValueType = VAR_FLOAT
+				continue
+			}
+
+		default:
+			return VAR_ERROR, fmt.Errorf("type error: argument of unacceptable type %q passed to %q", a.VariantType, functionName)
+		}
+	}
+
+	return resultValueType, nil
+}
+
+func unaryOpNumber(args []Variant, unaryOpInt func(int64) (int64, error), unaryOpFloat func(float64) (float64, error), functionName string) Variant {
+	if e := ensureExactArity(args, 1, functionName); e != nil {
+		return Variant{VariantType: VAR_ERROR, VariantValue: e}
+	}
+
+	if e := ensureNumberArgs(args, functionName); e != nil {
+		return Variant{VariantType: VAR_ERROR, VariantValue: e}
+	}
+
+	resultValueType, e := getPromotedNumberType(args, functionName)
+	if e != nil {
+		return Variant{VariantType: VAR_ERROR, VariantValue: e}
+	}
+
+	switch resultValueType {
+	case VAR_FLOAT:
+		res0, e := args[0].ExtractFloat()
+		if e != nil {
+			return Variant{VariantType: VAR_ERROR, VariantValue: e}
+		}
+		res, e := unaryOpFloat(res0)
+		if e != nil {
+			return Variant{VariantType: VAR_ERROR, VariantValue: e}
+		}
+		return Variant{VariantType: VAR_FLOAT, VariantValue: res}
+
+	case VAR_INT:
+		res0, e := args[0].ExtractInt()
+		if e != nil {
+			return Variant{VariantType: VAR_ERROR, VariantValue: e}
+		}
+		res, e := unaryOpInt(res0)
+		if e != nil {
+			return Variant{VariantType: VAR_ERROR, VariantValue: e}
+		}
+		return Variant{VariantType: VAR_INT, VariantValue: res}
+
+	default:
+		return Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("panic: getPromotedNumberType returned something other than VAR_INT and VAR_FLOAT")}
+	}
+}
+
+func binaryOpNumbers(args []Variant, int_folder func(int64, int64) (int64, error), float_folder func(float64, float64) (float64, error), functionName string) Variant {
+	if e := ensureNumberArgs(args, functionName); e != nil {
+		return Variant{VariantType: VAR_ERROR, VariantValue: e}
+	}
+
+	if e := ensureExactArity(args, 2, functionName); e != nil {
+		return Variant{VariantType: VAR_ERROR, VariantValue: e}
+	}
+
+	resultValueType, e := getPromotedNumberType(args, functionName)
+	if e != nil {
+		return Variant{VariantType: VAR_ERROR, VariantValue: e}
+	}
+
+	switch resultValueType {
+	case VAR_FLOAT:
+		return binaryOpFloats(args, float_folder, functionName)
+
+	case VAR_INT:
+		return binaryOpInts(args, int_folder, functionName)
+
+	default:
+		return Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("panic: getPromotedNumberType returned something other than VAR_INT and VAR_FLOAT")}
+	}
+}
+
+func binaryOpFloats(args []Variant, float_folder func(float64, float64) (float64, error), functionName string) Variant {
+	if e := ensureNumberArgs(args, functionName); e != nil {
+		return Variant{VariantType: VAR_ERROR, VariantValue: e}
+	}
+
+	if e := ensureExactArity(args, 2, functionName); e != nil {
+		return Variant{VariantType: VAR_ERROR, VariantValue: e}
+	}
+
+	return foldFloats(args, float_folder, functionName)
+}
+
+func binaryOpInts(args []Variant, int_folder func(int64, int64) (int64, error), functionName string) Variant {
+	if e := ensureNumberArgs(args, functionName); e != nil {
+		return Variant{VariantType: VAR_ERROR, VariantValue: e}
+	}
+
+	if e := ensureExactArity(args, 2, functionName); e != nil {
+		return Variant{VariantType: VAR_ERROR, VariantValue: e}
+	}
+
+	return foldInts(args, int_folder, functionName)
+}
+
+func foldNumbers(args []Variant, int_folder func(int64, int64) (int64, error), float_folder func(float64, float64) (float64, error), functionName string) Variant {
+	if e := ensureNumberArgs(args, functionName); e != nil {
+		return Variant{VariantType: VAR_ERROR, VariantValue: e}
+	}
+
+	resultValueType, e := getPromotedNumberType(args, functionName)
+	if e != nil {
+		return Variant{VariantType: VAR_ERROR, VariantValue: e}
+	}
+
+	switch resultValueType {
+	case VAR_FLOAT:
+		return foldFloats(args, float_folder, functionName)
+
+	case VAR_INT:
+		return foldInts(args, int_folder, functionName)
+
+	default:
+		return Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("panic: getPromotedNumberType returned something other than VAR_INT and VAR_FLOAT")}
+	}
+}
+
+func foldFloats(args []Variant, float_folder func(float64, float64) (float64, error), functionName string) Variant {
+	v, e := args[0].ExtractFloat()
+	if e != nil {
+		return Variant{VariantType: VAR_ERROR, VariantValue: e}
+	}
+	res := v
+
+	for _, a := range args[1:] {
+		v, e := a.ExtractFloat()
+		if e != nil {
+			return Variant{VariantType: VAR_ERROR, VariantValue: e}
+		}
+
+		if res, e = float_folder(res, v); e != nil {
+			return Variant{VariantType: VAR_ERROR, VariantValue: e}
+		}
+	}
+
+	return Variant{VariantType: VAR_FLOAT, VariantValue: res}
+}
+
+func foldInts(args []Variant, int_folder func(int64, int64) (int64, error), functionName string) Variant {
+	v, e := args[0].ExtractInt()
+	if e != nil {
+		return Variant{VariantType: VAR_ERROR, VariantValue: e}
+	}
+	res := v
+
+	for _, a := range args[1:] {
+		v, e := a.ExtractInt()
+		if e != nil {
+			return Variant{VariantType: VAR_ERROR, VariantValue: e}
+		}
+		if res, e = int_folder(res, v); e != nil {
+			return Variant{VariantType: VAR_ERROR, VariantValue: e}
+		}
+	}
+
+	return Variant{VariantType: VAR_INT, VariantValue: res}
 }
