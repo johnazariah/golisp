@@ -42,23 +42,27 @@ func (p *atom) Eval(ctx *EvaluationContext) *EvaluationContext {
 }
 
 func (p *list) Eval(ctx *EvaluationContext) *EvaluationContext {
-	functionName := p.children[0].Eval(ctx).EvaluatedValue.ExtractString()
-	functionArgs := []Variant{}
-
-	for _, v := range p.children[1:] {
-		switch v.(type) {
-		case *null, *atom:
-			functionArgs = append(functionArgs, v.Eval(ctx).EvaluatedValue)
-		case *list:
-			functionArgs = append(functionArgs, v.Eval(NewEvaluationContext(ctx)).EvaluatedValue)
-		}
-	}
-
-	function, found := ctx.FunctionTable[functionName]
-	if found {
-		ctx.EvaluatedValue = function(functionArgs)
+	v := p.children[0].Eval(ctx).EvaluatedValue
+	if functionName, err := v.GetIdentifierValue(); err != nil {
+		ctx.EvaluatedValue = Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("%q is not a valid function name", v.ToDebugString())}
 	} else {
-		ctx.EvaluatedValue = Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("requested function %q not found", functionName)}
+		functionArgs := []Variant{}
+
+		for _, v := range p.children[1:] {
+			switch v.(type) {
+			case *null, *atom:
+				functionArgs = append(functionArgs, v.Eval(ctx).EvaluatedValue)
+			case *list:
+				functionArgs = append(functionArgs, v.Eval(NewEvaluationContext(ctx)).EvaluatedValue)
+			}
+		}
+
+		function, found := ctx.FunctionTable[functionName]
+		if found {
+			ctx.EvaluatedValue = function(functionArgs)
+		} else {
+			ctx.EvaluatedValue = Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("requested function %q not found", functionName)}
+		}
 	}
 
 	return ctx

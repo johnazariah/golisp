@@ -8,13 +8,12 @@ type TokenizerTestResult struct {
 	tokenType enumTokenType
 	value     string
 }
-type TokenizerTestCase struct {
-	input    string
-	expected []TokenizerTestResult
-}
 
 func TestTokenizer(t *testing.T) {
-	cases := [...]TokenizerTestCase{
+	tests := [...]struct {
+		input    string
+		expected []TokenizerTestResult
+	}{
 		{input: "", expected: []TokenizerTestResult{}},
 		{input: " ", expected: []TokenizerTestResult{}},
 		{input: "( )", expected: []TokenizerTestResult{{tokenType: TOK_LPAREN}, {tokenType: TOK_RPAREN}}},
@@ -32,31 +31,31 @@ func TestTokenizer(t *testing.T) {
 		{input: "(/* this is a comment */)", expected: []TokenizerTestResult{{tokenType: TOK_LPAREN}, {tokenType: TOK_COMMENT, value: "/* this is a comment */"}, {tokenType: TOK_RPAREN}}},
 	}
 
-	for _, c := range cases {
-		t.Run(c.input, func(t *testing.T) {
-			ti := newTokenizerContext(c.input)
+	for _, test := range tests {
+		t.Run(test.input, func(t *testing.T) {
+			ti := newTokenizerContext(test.input)
 
 			i := 0
 
 			for token := ti.NextToken(); token != nil; token = ti.NextToken() {
 
-				if c.expected[i].tokenType != token.tokenType {
-					t.Errorf("Expected Token Type: [%v]; Actual [%v]", c.expected[i].tokenType, token.tokenType)
+				if test.expected[i].tokenType != token.tokenType {
+					t.Errorf("Expected Token Type: [%v]; Actual [%v]", test.expected[i].tokenType, token.tokenType)
 					break
 				}
 
 				tokenValue := token.rawValue(ti)
 
-				if c.expected[i].value != tokenValue {
-					t.Errorf("Expected Value: [%v]; Actual [%v]", c.expected[i].value, tokenValue)
+				if test.expected[i].value != tokenValue {
+					t.Errorf("Expected Value: [%v]; Actual [%v]", test.expected[i].value, tokenValue)
 					break
 				}
 
 				i++
 			}
 
-			if i != len(c.expected) {
-				t.Errorf("Token count mismatch. Found [%v] tokens but expecting [%v]", i, len(c.expected))
+			if i != len(test.expected) {
+				t.Errorf("Token count mismatch. Found [%v] tokens but expecting [%v]", i, len(test.expected))
 			}
 		})
 	}

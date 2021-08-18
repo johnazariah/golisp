@@ -31,14 +31,18 @@ func ensureExactArity(args []Variant, arity int, functionName string) error {
 
 func ensureTypeIsNotInvalid(a Variant) error {
 	switch a.VariantType {
-	case VAR_ERROR:
-		return fmt.Errorf(a.ExtractString())
-
 	case VAR_MAX:
 		return fmt.Errorf("dev error: should never have type VAR_MAX")
 
+	case VAR_ERROR:
+		if v, e := a.GetErrorValue(); e != nil {
+			return e
+		} else {
+			return v
+		}
+
 	case VAR_IDENT:
-		return fmt.Errorf("scope error: unresolved identifier %q", a.ExtractString())
+		return fmt.Errorf("scope error: unresolved identifier %q", a.ToDebugString())
 	}
 	return nil
 }
@@ -85,7 +89,7 @@ func unaryOpBoolean(args []Variant, unaryOp func(bool) bool, functionName string
 		return Variant{VariantType: VAR_ERROR, VariantValue: e}
 	}
 
-	v0, e := args[0].ExtractBool()
+	v0, e := args[0].CoerceToBool()
 	if e != nil {
 		return Variant{VariantType: VAR_ERROR, VariantValue: e}
 	}
@@ -116,13 +120,13 @@ func foldBooleans(args []Variant, bool_folder func(bool, bool) bool, functionNam
 		return Variant{VariantType: VAR_ERROR, VariantValue: e}
 	}
 
-	v, e := args[0].ExtractBool()
+	v, e := args[0].CoerceToBool()
 	if e != nil {
 		return Variant{VariantType: VAR_ERROR, VariantValue: e}
 	}
 	res := v
 	for _, a := range args[1:] {
-		v, e := a.ExtractBool()
+		v, e := a.CoerceToBool()
 		if e != nil {
 			return Variant{VariantType: VAR_ERROR, VariantValue: e}
 		}
@@ -180,7 +184,7 @@ func unaryOpNumber(args []Variant, unaryOpInt func(int64) (int64, error), unaryO
 
 	switch resultValueType {
 	case VAR_FLOAT:
-		res0, e := args[0].ExtractFloat()
+		res0, e := args[0].CoerceToFloat()
 		if e != nil {
 			return Variant{VariantType: VAR_ERROR, VariantValue: e}
 		}
@@ -191,7 +195,7 @@ func unaryOpNumber(args []Variant, unaryOpInt func(int64) (int64, error), unaryO
 		return Variant{VariantType: VAR_FLOAT, VariantValue: res}
 
 	case VAR_INT:
-		res0, e := args[0].ExtractInt()
+		res0, e := args[0].CoerceToInt()
 		if e != nil {
 			return Variant{VariantType: VAR_ERROR, VariantValue: e}
 		}
@@ -279,14 +283,14 @@ func foldNumbers(args []Variant, int_folder func(int64, int64) (int64, error), f
 }
 
 func foldFloats(args []Variant, float_folder func(float64, float64) (float64, error), functionName string) Variant {
-	v, e := args[0].ExtractFloat()
+	v, e := args[0].CoerceToFloat()
 	if e != nil {
 		return Variant{VariantType: VAR_ERROR, VariantValue: e}
 	}
 	res := v
 
 	for _, a := range args[1:] {
-		v, e := a.ExtractFloat()
+		v, e := a.CoerceToFloat()
 		if e != nil {
 			return Variant{VariantType: VAR_ERROR, VariantValue: e}
 		}
@@ -300,14 +304,14 @@ func foldFloats(args []Variant, float_folder func(float64, float64) (float64, er
 }
 
 func foldInts(args []Variant, int_folder func(int64, int64) (int64, error), functionName string) Variant {
-	v, e := args[0].ExtractInt()
+	v, e := args[0].CoerceToInt()
 	if e != nil {
 		return Variant{VariantType: VAR_ERROR, VariantValue: e}
 	}
 	res := v
 
 	for _, a := range args[1:] {
-		v, e := a.ExtractInt()
+		v, e := a.CoerceToInt()
 		if e != nil {
 			return Variant{VariantType: VAR_ERROR, VariantValue: e}
 		}

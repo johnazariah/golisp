@@ -39,7 +39,7 @@ func TestEval(t *testing.T) {
 		{desc: "or nested - true", input: "(or (or 1 t) (or T TRUE (or true True)))", successValueType: VAR_BOOL, successValue: true},
 		{desc: "invalid type", input: "(or 3.1415 today)", failureMessage: fmt.Sprintf("type error: argument of unacceptable type %q passed to \"or\"", VAR_FLOAT)},
 		{desc: "unresolved identifier", input: "(or yesterday today)", failureMessage: fmt.Sprintf("scope error: unresolved identifier %q", "yesterday")},
-		{desc: "invalid function", input: "(+ (1) (2))", failureMessage: "requested function \"1\" not found"},
+		{desc: "invalid function", input: "(+ (1) (2))", failureMessage: "\"1\" is not a valid function name"},
 		{desc: "unknown symbol", input: "(+ 1 2 a)", failureMessage: "scope error: unresolved identifier \"a\""},
 	}
 
@@ -58,7 +58,7 @@ func TestEval(t *testing.T) {
 
 			case VAR_ERROR:
 				assert.NotNil(t, c.failureMessage, "encountered unexpected failure")
-				assert.Equal(t, c.failureMessage, ctx.EvaluatedValue.ExtractString(), "unexpected failure message")
+				assert.Equal(t, c.failureMessage, ctx.EvaluatedValue.ToDebugString(), "unexpected failure message")
 
 			default:
 				assert.Equal(t, c.successValueType, ctx.EvaluatedValue.VariantType, "unexpected success value type")
