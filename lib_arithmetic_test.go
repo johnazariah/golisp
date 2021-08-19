@@ -1,7 +1,6 @@
 package golisp
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -93,7 +92,7 @@ func TestSubtract(t *testing.T) {
 				{VariantType: VAR_INT, VariantValue: int64(3)},
 				{VariantType: VAR_INT, VariantValue: int64(4)},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("arity error: expected exactly 1 or 2 arguments for %q", "sub")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildArityError_1or2("sub")},
 		},
 		{
 			desc: "int - int valid",
@@ -196,14 +195,14 @@ func TestDivide(t *testing.T) {
 			input: []Variant{
 				{VariantType: VAR_INT, VariantValue: int64(1)},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("arity error: expected exactly 2 arguments for %q", "div")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildExactArityError(2, "div")},
 		},
 		{
 			desc: "single float value",
 			input: []Variant{
 				{VariantType: VAR_FLOAT, VariantValue: float64(3.14)},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("arity error: expected exactly 2 arguments for %q", "div")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildExactArityError(2, "div")},
 		},
 		{
 			desc: "int - int invalid",
@@ -213,7 +212,7 @@ func TestDivide(t *testing.T) {
 				{VariantType: VAR_INT, VariantValue: int64(3)},
 				{VariantType: VAR_INT, VariantValue: int64(4)},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("arity error: expected exactly 2 arguments for %q", "div")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildExactArityError(2, "div")},
 		},
 		{
 			desc: "float / float value",
@@ -237,7 +236,7 @@ func TestDivide(t *testing.T) {
 				{VariantType: VAR_FLOAT, VariantValue: float64(6.28)},
 				{VariantType: VAR_INT, VariantValue: int64(0)},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("math error: attempt to divide by zero")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildDivideByZeroError()},
 		},
 	}
 
@@ -260,14 +259,14 @@ func TestPower(t *testing.T) {
 			input: []Variant{
 				{VariantType: VAR_INT, VariantValue: int64(1)},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("arity error: expected exactly 2 arguments for %q", "pow")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildExactArityError(2, "pow")},
 		},
 		{
 			desc: "single float value",
 			input: []Variant{
 				{VariantType: VAR_FLOAT, VariantValue: float64(3.14)},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("arity error: expected exactly 2 arguments for %q", "pow")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildExactArityError(2, "pow")},
 		},
 		{
 			desc: "int[] invalid",
@@ -277,7 +276,7 @@ func TestPower(t *testing.T) {
 				{VariantType: VAR_INT, VariantValue: int64(3)},
 				{VariantType: VAR_INT, VariantValue: int64(4)},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("arity error: expected exactly 2 arguments for %q", "pow")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildExactArityError(2, "pow")},
 		},
 		{
 			desc: "float ^ float value",

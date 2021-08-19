@@ -1,7 +1,6 @@
 package golisp
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -43,7 +42,7 @@ func (l *ArithmeticLibrary) subtract(args []Variant) Variant {
 			functionName)
 
 	default:
-		return Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("arity error: expected exactly 1 or 2 arguments for %q", functionName)}
+		return Variant{VariantType: VAR_ERROR, VariantValue: buildArityError_1or2(functionName)}
 	}
 }
 
@@ -60,7 +59,7 @@ func (l *ArithmeticLibrary) divide(args []Variant) Variant {
 		args,
 		func(a float64, b float64) (float64, error) {
 			if b == float64(0) {
-				return 0, fmt.Errorf("math error: attempt to divide by zero")
+				return 0, buildDivideByZeroError()
 			}
 			return a / b, nil
 		},

@@ -46,16 +46,6 @@ type Variant struct {
 	VariantValue interface{}
 }
 
-func (b *Variant) buildInconsistentTypeError() error {
-	const typeErrorFormatString = "type error: value [%v] is inconsistent with type %q"
-	return fmt.Errorf(typeErrorFormatString, b.VariantValue, b.VariantType)
-}
-
-func (b *Variant) buildTypeError(expectedType EnumVariantType) error {
-	const typeErrorFormatString = "type error: cannot represent variant of type %q as %q"
-	return fmt.Errorf(typeErrorFormatString, b.VariantType, expectedType)
-}
-
 func (b *Variant) GetTypeConsistentValue() (interface{}, error) {
 	switch b.VariantType {
 	case VAR_UNKNOWN:
@@ -69,7 +59,7 @@ func (b *Variant) GetTypeConsistentValue() (interface{}, error) {
 		case time.Time:
 			return b.VariantValue, nil
 		default:
-			return nil, b.buildInconsistentTypeError()
+			return nil, buildInconsistentTypeError(b.VariantValue, b.VariantType)
 		}
 
 	case VAR_BOOL:
@@ -99,7 +89,7 @@ func (b *Variant) GetTypeConsistentValue() (interface{}, error) {
 			return b.VariantValue.(uint64) != uint64(0), nil
 
 		default:
-			return nil, b.buildInconsistentTypeError()
+			return nil, buildInconsistentTypeError(b.VariantValue, b.VariantType)
 		}
 
 	case VAR_FLOAT:
@@ -137,7 +127,7 @@ func (b *Variant) GetTypeConsistentValue() (interface{}, error) {
 			return float64(0.0), nil
 
 		default:
-			return nil, b.buildInconsistentTypeError()
+			return nil, buildInconsistentTypeError(b.VariantValue, b.VariantType)
 		}
 	case VAR_INT:
 		switch b.VariantValue.(type) {
@@ -169,23 +159,60 @@ func (b *Variant) GetTypeConsistentValue() (interface{}, error) {
 			return int64(0), nil
 
 		default:
-			return nil, b.buildInconsistentTypeError()
+			return nil, buildInconsistentTypeError(b.VariantValue, b.VariantType)
 		}
 
 	case VAR_STRING:
 		switch b.VariantValue.(type) {
+		case time.Time:
+			return b.VariantValue.(time.Time).Format(time.RFC3339), nil
+
+		case bool:
+			return fmt.Sprintf("%t", b.VariantValue.(bool)), nil
+
+		case int:
+			return fmt.Sprintf("%d", b.VariantValue.(int)), nil
+		case int8:
+			return fmt.Sprintf("%d", b.VariantValue.(int8)), nil
+		case int16:
+			return fmt.Sprintf("%d", b.VariantValue.(int16)), nil
+		case int32:
+			return fmt.Sprintf("%d", b.VariantValue.(int32)), nil
+		case int64:
+			return fmt.Sprintf("%d", b.VariantValue.(int64)), nil
+		case uint:
+			return fmt.Sprintf("%d", b.VariantValue.(uint)), nil
+		case uint8:
+			return fmt.Sprintf("%d", b.VariantValue.(uint8)), nil
+		case uint16:
+			return fmt.Sprintf("%d", b.VariantValue.(uint16)), nil
+		case uint32:
+			return fmt.Sprintf("%d", b.VariantValue.(uint32)), nil
+		case uint64:
+			return fmt.Sprintf("%d", b.VariantValue.(uint64)), nil
+
+		case float32:
+			return fmt.Sprintf("%e", b.VariantValue.(float32)), nil
+		case float64:
+			return fmt.Sprintf("%e", b.VariantValue.(float64)), nil
+
 		case string:
 			return b.VariantValue, nil
+
+		case error:
+			return b.VariantValue.(error).Error(), nil
+
 		default:
-			return nil, b.buildInconsistentTypeError()
+			return nil, buildInconsistentTypeError(b.VariantValue, b.VariantType)
 		}
 
 	case VAR_IDENT:
 		switch b.VariantValue.(type) {
 		case string:
 			return b.VariantValue, nil
+
 		default:
-			return nil, b.buildInconsistentTypeError()
+			return nil, buildInconsistentTypeError(b.VariantValue, b.VariantType)
 		}
 
 	case VAR_ERROR:
@@ -193,14 +220,14 @@ func (b *Variant) GetTypeConsistentValue() (interface{}, error) {
 		case error:
 			return b.VariantValue, nil
 		default:
-			return nil, b.buildInconsistentTypeError()
+			return nil, buildInconsistentTypeError(b.VariantValue, b.VariantType)
 		}
 
 	case VAR_MAX:
 		break
 	}
 
-	return nil, fmt.Errorf("dev error: unhandled variant type")
+	return nil, buildUnhandledVariantTypeError()
 }
 
 func (b *Variant) ToDebugString() string {
@@ -234,6 +261,7 @@ func (b *Variant) ToDebugString() string {
 
 	panic("should never get here")
 }
+
 func (b *Variant) GetDateValue() (time.Time, error) {
 	targetType := VAR_DATE
 	errorValue := time.Time{}
@@ -242,7 +270,7 @@ func (b *Variant) GetDateValue() (time.Time, error) {
 	}
 
 	if _, t := acceptableTypes[b.VariantType]; !t {
-		return errorValue, b.buildTypeError(targetType)
+		return errorValue, buildTypeError(b.VariantType, targetType)
 	}
 
 	if value, err := b.GetTypeConsistentValue(); err != nil {
@@ -262,7 +290,7 @@ func (b *Variant) CoerceToBool() (bool, error) {
 	}
 
 	if _, t := acceptableTypes[b.VariantType]; !t {
-		return errorValue, b.buildTypeError(targetType)
+		return errorValue, buildTypeError(b.VariantType, targetType)
 	}
 
 	coerced := &Variant{VariantType: targetType, VariantValue: b.VariantValue}
@@ -284,7 +312,7 @@ func (b *Variant) CoerceToFloat() (float64, error) {
 		VAR_BOOL:  true,
 	}
 	if _, t := acceptableTypes[b.VariantType]; !t {
-		return errorValue, b.buildTypeError(targetType)
+		return errorValue, buildTypeError(b.VariantType, targetType)
 	}
 
 	coerced := &Variant{VariantType: targetType, VariantValue: b.VariantValue}
@@ -305,7 +333,7 @@ func (b *Variant) CoerceToInt() (int64, error) {
 		VAR_BOOL: true,
 	}
 	if _, t := acceptableTypes[b.VariantType]; !t {
-		return errorValue, b.buildTypeError(targetType)
+		return errorValue, buildTypeError(b.VariantType, targetType)
 	}
 
 	coerced := &Variant{VariantType: targetType, VariantValue: b.VariantValue}
@@ -316,19 +344,13 @@ func (b *Variant) CoerceToInt() (int64, error) {
 		return value.(int64), nil
 	}
 }
-
-func (b *Variant) GetStringValue() (string, error) {
+func (b *Variant) CoerceToString() (string, error) {
 	targetType := VAR_STRING
 	errorValue := ""
-	acceptableTypes := map[EnumVariantType]bool{
-		VAR_STRING: true,
-	}
 
-	if _, t := acceptableTypes[b.VariantType]; !t {
-		return errorValue, b.buildTypeError(targetType)
-	}
+	coerced := &Variant{VariantType: targetType, VariantValue: b.VariantValue}
 
-	if value, err := b.GetTypeConsistentValue(); err != nil {
+	if value, err := coerced.GetTypeConsistentValue(); err != nil {
 		return errorValue, err
 	} else {
 		return value.(string), nil
@@ -343,7 +365,7 @@ func (b *Variant) GetIdentifierValue() (string, error) {
 	}
 
 	if _, t := acceptableTypes[b.VariantType]; !t {
-		return errorValue, b.buildTypeError(targetType)
+		return errorValue, buildTypeError(b.VariantType, targetType)
 	}
 
 	if value, err := b.GetTypeConsistentValue(); err != nil {
@@ -361,7 +383,7 @@ func (b *Variant) GetErrorValue() (error, error) {
 	}
 
 	if _, t := acceptableTypes[b.VariantType]; !t {
-		return errorValue, b.buildTypeError(targetType)
+		return errorValue, buildTypeError(b.VariantType, targetType)
 	}
 
 	if value, err := b.GetTypeConsistentValue(); err != nil {

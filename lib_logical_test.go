@@ -1,7 +1,6 @@
 package golisp
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,14 +19,14 @@ func TestOr(t *testing.T) {
 			input: []Variant{
 				{VariantType: VAR_BOOL, VariantValue: true},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("arity error: expected at least 2 arguments for %q", "or")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildMinimumArityError(2, "or")},
 		},
 		{
 			desc: "single false value",
 			input: []Variant{
 				{VariantType: VAR_BOOL, VariantValue: false},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("arity error: expected at least 2 arguments for %q", "or")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildMinimumArityError(2, "or")},
 		},
 		{
 			desc: "all false values",
@@ -55,7 +54,7 @@ func TestOr(t *testing.T) {
 				{VariantType: VAR_BOOL, VariantValue: false},
 				{VariantType: VAR_STRING, VariantValue: "true"},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("type error: argument of unacceptable type %q passed to %q", VAR_STRING, "or")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildUnacceptableTypeError(VAR_STRING, "or")},
 		},
 	}
 
@@ -78,14 +77,14 @@ func TestNor(t *testing.T) {
 			input: []Variant{
 				{VariantType: VAR_BOOL, VariantValue: true},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("arity error: expected at least 2 arguments for %q", "nor")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildMinimumArityError(2, "nor")},
 		},
 		{
 			desc: "single false value",
 			input: []Variant{
 				{VariantType: VAR_BOOL, VariantValue: false},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("arity error: expected at least 2 arguments for %q", "nor")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildMinimumArityError(2, "nor")},
 		},
 		{
 			desc: "all false values",
@@ -113,7 +112,7 @@ func TestNor(t *testing.T) {
 				{VariantType: VAR_BOOL, VariantValue: false},
 				{VariantType: VAR_STRING, VariantValue: "true"},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("type error: argument of unacceptable type %q passed to %q", VAR_STRING, "nor")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildUnacceptableTypeError(VAR_STRING, "nor")},
 		},
 	}
 
@@ -136,14 +135,14 @@ func TestAnd(t *testing.T) {
 			input: []Variant{
 				{VariantType: VAR_BOOL, VariantValue: true},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("arity error: expected at least 2 arguments for %q", "and")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildMinimumArityError(2, "and")},
 		},
 		{
 			desc: "single false value",
 			input: []Variant{
 				{VariantType: VAR_BOOL, VariantValue: false},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("arity error: expected at least 2 arguments for %q", "and")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildMinimumArityError(2, "and")},
 		},
 		{
 			desc: "all true values",
@@ -171,7 +170,7 @@ func TestAnd(t *testing.T) {
 				{VariantType: VAR_BOOL, VariantValue: false},
 				{VariantType: VAR_STRING, VariantValue: "true"},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("type error: argument of unacceptable type %q passed to %q", VAR_STRING, "and")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildUnacceptableTypeError(VAR_STRING, "and")},
 		},
 	}
 
@@ -194,14 +193,14 @@ func TestNand(t *testing.T) {
 			input: []Variant{
 				{VariantType: VAR_BOOL, VariantValue: true},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("arity error: expected at least 2 arguments for %q", "nand")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildMinimumArityError(2, "nand")},
 		},
 		{
 			desc: "single false value",
 			input: []Variant{
 				{VariantType: VAR_BOOL, VariantValue: false},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("arity error: expected at least 2 arguments for %q", "nand")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildMinimumArityError(2, "nand")},
 		},
 		{
 			desc: "all true values",
@@ -229,7 +228,7 @@ func TestNand(t *testing.T) {
 				{VariantType: VAR_BOOL, VariantValue: false},
 				{VariantType: VAR_STRING, VariantValue: "true"},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("type error: argument of unacceptable type %q passed to %q", VAR_STRING, "nand")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildUnacceptableTypeError(VAR_STRING, "nand")},
 		},
 	}
 
@@ -269,7 +268,7 @@ func TestNot(t *testing.T) {
 				{VariantType: VAR_BOOL, VariantValue: false},
 				{VariantType: VAR_BOOL, VariantValue: false},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("arity error: expected exactly 1 arguments for %q", "not")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildExactArityError(1, "not")},
 		},
 		{
 			desc: "mixed values",
@@ -279,14 +278,14 @@ func TestNot(t *testing.T) {
 				{VariantType: VAR_BOOL, VariantValue: false},
 				{VariantType: VAR_BOOL, VariantValue: false},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("arity error: expected exactly 1 arguments for %q", "not")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildExactArityError(1, "not")},
 		},
 		{
 			desc: "incorrectly typed values",
 			input: []Variant{
 				{VariantType: VAR_STRING, VariantValue: "true"},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("type error: argument of unacceptable type %q passed to %q", VAR_STRING, "not")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildUnacceptableTypeError(VAR_STRING, "not")},
 		},
 	}
 
@@ -309,14 +308,14 @@ func TestXor(t *testing.T) {
 			input: []Variant{
 				{VariantType: VAR_BOOL, VariantValue: true},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("arity error: expected exactly 2 arguments for %q", "xor")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildExactArityError(2, "xor")},
 		},
 		{
 			desc: "single false value",
 			input: []Variant{
 				{VariantType: VAR_BOOL, VariantValue: false},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("arity error: expected exactly 2 arguments for %q", "xor")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildExactArityError(2, "xor")},
 		},
 		{
 			desc: "all false values",
@@ -326,7 +325,7 @@ func TestXor(t *testing.T) {
 				{VariantType: VAR_BOOL, VariantValue: false},
 				{VariantType: VAR_BOOL, VariantValue: false},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("arity error: expected exactly 2 arguments for %q", "xor")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildExactArityError(2, "xor")},
 		},
 		{
 			desc: "mixed values",
@@ -336,7 +335,7 @@ func TestXor(t *testing.T) {
 				{VariantType: VAR_BOOL, VariantValue: false},
 				{VariantType: VAR_BOOL, VariantValue: false},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("arity error: expected exactly 2 arguments for %q", "xor")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildExactArityError(2, "xor")},
 		},
 		{
 			desc: "same values",
@@ -360,7 +359,7 @@ func TestXor(t *testing.T) {
 				{VariantType: VAR_BOOL, VariantValue: false},
 				{VariantType: VAR_STRING, VariantValue: "true"},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("type error: argument of unacceptable type %q passed to %q", VAR_STRING, "xor")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildUnacceptableTypeError(VAR_STRING, "xor")},
 		},
 	}
 
@@ -383,14 +382,14 @@ func TestXnor(t *testing.T) {
 			input: []Variant{
 				{VariantType: VAR_BOOL, VariantValue: true},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("arity error: expected exactly 2 arguments for %q", "xnor")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildExactArityError(2, "xnor")},
 		},
 		{
 			desc: "single false value",
 			input: []Variant{
 				{VariantType: VAR_BOOL, VariantValue: false},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("arity error: expected exactly 2 arguments for %q", "xnor")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildExactArityError(2, "xnor")},
 		},
 		{
 			desc: "all false values",
@@ -400,7 +399,7 @@ func TestXnor(t *testing.T) {
 				{VariantType: VAR_BOOL, VariantValue: false},
 				{VariantType: VAR_BOOL, VariantValue: false},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("arity error: expected exactly 2 arguments for %q", "xnor")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildExactArityError(2, "xnor")},
 		},
 		{
 			desc: "mixed values",
@@ -410,7 +409,7 @@ func TestXnor(t *testing.T) {
 				{VariantType: VAR_BOOL, VariantValue: false},
 				{VariantType: VAR_BOOL, VariantValue: false},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("arity error: expected exactly 2 arguments for %q", "xnor")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildExactArityError(2, "xnor")},
 		},
 		{
 			desc: "same values",
@@ -434,7 +433,7 @@ func TestXnor(t *testing.T) {
 				{VariantType: VAR_BOOL, VariantValue: false},
 				{VariantType: VAR_STRING, VariantValue: "true"},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("type error: argument of unacceptable type %q passed to %q", VAR_STRING, "xnor")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildUnacceptableTypeError(VAR_STRING, "xnor")},
 		},
 	}
 

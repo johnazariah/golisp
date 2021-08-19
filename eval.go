@@ -1,9 +1,5 @@
 package golisp
 
-import (
-	"fmt"
-)
-
 type FunctionType func([]Variant) Variant
 type FunctionTable map[string]FunctionType
 
@@ -17,6 +13,7 @@ type EvaluationContext struct {
 func loadDefaultLibraries(functions FunctionTable) FunctionTable {
 	functions = (&ArithmeticLibrary{}).InjectFunctions(functions)
 	functions = (&LogicalLibrary{}).InjectFunctions(functions)
+	functions = (&StringLibrary{}).InjectFunctions(functions)
 	return functions
 }
 
@@ -44,7 +41,7 @@ func (p *atom) Eval(ctx *EvaluationContext) *EvaluationContext {
 func (p *list) Eval(ctx *EvaluationContext) *EvaluationContext {
 	v := p.children[0].Eval(ctx).EvaluatedValue
 	if functionName, err := v.GetIdentifierValue(); err != nil {
-		ctx.EvaluatedValue = Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("%q is not a valid function name", v.ToDebugString())}
+		ctx.EvaluatedValue = Variant{VariantType: VAR_ERROR, VariantValue: buildInvalidFunctionNameError(v.ToDebugString())}
 	} else {
 		functionArgs := []Variant{}
 
@@ -61,7 +58,7 @@ func (p *list) Eval(ctx *EvaluationContext) *EvaluationContext {
 		if found {
 			ctx.EvaluatedValue = function(functionArgs)
 		} else {
-			ctx.EvaluatedValue = Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("requested function %q not found", functionName)}
+			ctx.EvaluatedValue = Variant{VariantType: VAR_ERROR, VariantValue: buildFunctionNameNotFoundError(v.ToDebugString())}
 		}
 	}
 

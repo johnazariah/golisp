@@ -1,7 +1,6 @@
 package golisp
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -55,13 +54,13 @@ func parseSExpr(tokenizer *tokenizerContext, tok *token, into *list) (SExpr, err
 		}
 
 		if t == nil {
-			return into, fmt.Errorf("unexpected end of string")
+			return into, buildUnexpectedEndOfStringError()
 		}
 
 		into.children = append(into.children, child)
 
 	case TOK_RPAREN:
-		return into, fmt.Errorf("unexpected close paren")
+		return into, buildUnexpectedCloseParenError()
 	}
 
 	return into, nil
@@ -74,7 +73,7 @@ func Parse(s string) (SExpr, error) {
 	r, e := parseSExpr(tokenizer, token, &list{children: []SExpr{}})
 
 	if tokenizer.hasMoreText() {
-		return &null{}, fmt.Errorf("unexpected trailing text")
+		return &null{}, buildUnexpectedTrailingTextError()
 	}
 
 	if e == nil {

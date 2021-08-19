@@ -1,7 +1,5 @@
 package golisp
 
-import "fmt"
-
 type FunctionLibrary interface {
 	InjectFunctions(*FunctionTable) *FunctionTable
 }
@@ -10,29 +8,27 @@ func ensureMaximumArity(args []Variant, arity int, functionName string) error {
 	if len(args) <= arity {
 		return nil
 	}
-
-	return fmt.Errorf("arity error: expected at most %d arguments for %q", arity, functionName)
+	return buildMaximumArityError(arity, functionName)
 }
 
 func ensureMinimimArity(args []Variant, arity int, functionName string) error {
 	if len(args) >= arity {
 		return nil
 	}
-
-	return fmt.Errorf("arity error: expected at least %d arguments for %q", arity, functionName)
+	return buildMinimumArityError(arity, functionName)
 }
 
 func ensureExactArity(args []Variant, arity int, functionName string) error {
 	if len(args) == arity {
 		return nil
 	}
-	return fmt.Errorf("arity error: expected exactly %d arguments for %q", arity, functionName)
+	return buildExactArityError(arity, functionName)
 }
 
 func ensureTypeIsNotInvalid(a Variant) error {
 	switch a.VariantType {
 	case VAR_MAX:
-		return fmt.Errorf("dev error: should never have type VAR_MAX")
+		return buildVariantShouldNotBeMaxError()
 
 	case VAR_ERROR:
 		if v, e := a.GetErrorValue(); e != nil {
@@ -42,7 +38,7 @@ func ensureTypeIsNotInvalid(a Variant) error {
 		}
 
 	case VAR_IDENT:
-		return fmt.Errorf("scope error: unresolved identifier %q", a.ToDebugString())
+		return buildUnresolvedIdentifierError(a.ToDebugString())
 	}
 	return nil
 }
@@ -56,7 +52,7 @@ func ensureArgumentTypesMatch(args []Variant, acceptableTypes []EnumVariantType,
 
 		for _, t := range forbiddenTypes {
 			if a.VariantType == t {
-				return fmt.Errorf("type error: argument to %q can never be of type %q", functionName, t)
+				return buildForbiddenTypeError(functionName, t)
 			}
 		}
 
@@ -69,7 +65,7 @@ func ensureArgumentTypesMatch(args []Variant, acceptableTypes []EnumVariantType,
 		}
 
 		if !found {
-			return fmt.Errorf("type error: argument of unacceptable type %q passed to %q", a.VariantType.String(), functionName)
+			return buildUnacceptableTypeError(a.VariantType, functionName)
 		}
 	}
 
@@ -161,7 +157,7 @@ func getPromotedNumberType(args []Variant, functionName string) (EnumVariantType
 			}
 
 		default:
-			return VAR_ERROR, fmt.Errorf("type error: argument of unacceptable type %q passed to %q", a.VariantType, functionName)
+			return VAR_ERROR, buildUnacceptableTypeError(a.VariantType, functionName)
 		}
 	}
 
@@ -206,7 +202,7 @@ func unaryOpNumber(args []Variant, unaryOpInt func(int64) (int64, error), unaryO
 		return Variant{VariantType: VAR_INT, VariantValue: res}
 
 	default:
-		return Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("panic: getPromotedNumberType returned something other than VAR_INT and VAR_FLOAT")}
+		return Variant{VariantType: VAR_ERROR, VariantValue: buildGetPromotedNumberTypeReturnedInvalidType()}
 	}
 }
 
@@ -232,7 +228,7 @@ func binaryOpNumbers(args []Variant, int_folder func(int64, int64) (int64, error
 		return binaryOpInts(args, int_folder, functionName)
 
 	default:
-		return Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("panic: getPromotedNumberType returned something other than VAR_INT and VAR_FLOAT")}
+		return Variant{VariantType: VAR_ERROR, VariantValue: buildGetPromotedNumberTypeReturnedInvalidType()}
 	}
 }
 
@@ -278,7 +274,7 @@ func foldNumbers(args []Variant, int_folder func(int64, int64) (int64, error), f
 		return foldInts(args, int_folder, functionName)
 
 	default:
-		return Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("panic: getPromotedNumberType returned something other than VAR_INT and VAR_FLOAT")}
+		return Variant{VariantType: VAR_ERROR, VariantValue: buildGetPromotedNumberTypeReturnedInvalidType()}
 	}
 }
 
@@ -321,4 +317,25 @@ func foldInts(args []Variant, int_folder func(int64, int64) (int64, error), func
 	}
 
 	return Variant{VariantType: VAR_INT, VariantValue: res}
+}
+
+func foldStrings(args []Variant, string_folder func(string, string) (string, error), functionName string) Variant {
+	v, e := args[0].CoerceToString()
+	if e != nil {
+		return Variant{VariantType: VAR_ERROR, VariantValue: e}
+	}
+	res := v
+
+	for _, a := range args[1:] {
+		v, e := a.CoerceToString()
+		if e != nil {
+			return Variant{VariantType: VAR_ERROR, VariantValue: e}
+		}
+
+		if res, e = string_folder(res, v); e != nil {
+			return Variant{VariantType: VAR_ERROR, VariantValue: e}
+		}
+	}
+
+	return Variant{VariantType: VAR_STRING, VariantValue: res}
 }

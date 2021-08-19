@@ -7,6 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var errRandom error = fmt.Errorf("a random error message")
+
 func TestMaximumArity(t *testing.T) {
 	tests := [...]struct {
 		desc     string
@@ -41,7 +43,7 @@ func TestMaximumArity(t *testing.T) {
 				{VariantType: VAR_UNKNOWN},
 			},
 			arity:    2,
-			expected: fmt.Errorf("arity error: expected at most %d arguments for %q", 2, "test"),
+			expected: buildMaximumArityError(2, "test"),
 		},
 	}
 
@@ -66,7 +68,7 @@ func TestMinimumArity(t *testing.T) {
 				{VariantType: VAR_UNKNOWN},
 			},
 			arity:    2,
-			expected: fmt.Errorf("arity error: expected at least %d arguments for %q", 2, "test"),
+			expected: buildMinimumArityError(2, "test"),
 		},
 		{
 			desc: "exact",
@@ -112,7 +114,7 @@ func TestExactArity(t *testing.T) {
 				{VariantType: VAR_UNKNOWN},
 			},
 			arity:    2,
-			expected: fmt.Errorf("arity error: expected exactly %d arguments for %q", 2, "test"),
+			expected: buildExactArityError(2, "test"),
 		},
 		{
 			desc: "exact",
@@ -133,7 +135,7 @@ func TestExactArity(t *testing.T) {
 				{VariantType: VAR_UNKNOWN},
 			},
 			arity:    2,
-			expected: fmt.Errorf("arity error: expected exactly %d arguments for %q", 2, "test"),
+			expected: buildExactArityError(2, "test"),
 		},
 	}
 
@@ -153,18 +155,18 @@ func TestEnsureTypeIsNotInvalid(t *testing.T) {
 	}{
 		{
 			desc:     "VAR_ERROR",
-			input:    Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("an error")},
-			expected: fmt.Errorf("an error"),
+			input:    Variant{VariantType: VAR_ERROR, VariantValue: errRandom},
+			expected: errRandom,
 		},
 		{
 			desc:     "VAR_MAX",
 			input:    Variant{VariantType: VAR_MAX},
-			expected: fmt.Errorf("dev error: should never have type VAR_MAX"),
+			expected: buildVariantShouldNotBeMaxError(),
 		},
 		{
 			desc:     "VAR_IDENT",
 			input:    Variant{VariantType: VAR_IDENT, VariantValue: "a"},
-			expected: fmt.Errorf("scope error: unresolved identifier %q", "a"),
+			expected: buildUnresolvedIdentifierError("a"),
 		},
 	}
 
@@ -187,9 +189,9 @@ func TestEnsureArgumentTypesMatch(t *testing.T) {
 		{
 			desc: "invalid type",
 			input: []Variant{
-				{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("an error")},
+				{VariantType: VAR_ERROR, VariantValue: errRandom},
 			},
-			expected: fmt.Errorf("an error"),
+			expected: errRandom,
 		},
 		{
 			desc: "forbidden type",
@@ -199,7 +201,7 @@ func TestEnsureArgumentTypesMatch(t *testing.T) {
 			forbiddenTypes: []EnumVariantType{
 				VAR_STRING,
 			},
-			expected: fmt.Errorf("type error: argument to %q can never be of type %q", "test", "VAR_STRING"),
+			expected: buildForbiddenTypeError("test", VAR_STRING),
 		},
 		{
 			desc: "acceptable type",
@@ -230,7 +232,7 @@ func TestEnsureArgumentTypesMatch(t *testing.T) {
 				VAR_BOOL,
 				VAR_FLOAT,
 			},
-			expected: fmt.Errorf("type error: argument of unacceptable type %q passed to %q", "VAR_INT", "test"),
+			expected: buildUnacceptableTypeError(VAR_INT, "test"),
 		},
 	}
 
@@ -252,9 +254,9 @@ func TestGetPromotedNumberType(t *testing.T) {
 		{
 			desc: "invalid type",
 			input: []Variant{
-				{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("an error")},
+				{VariantType: VAR_ERROR, VariantValue: errRandom},
 			},
-			expectedError: fmt.Errorf("an error"),
+			expectedError: errRandom,
 		},
 		{
 			desc: "promote to int",
@@ -288,7 +290,7 @@ func TestGetPromotedNumberType(t *testing.T) {
 				{VariantType: VAR_INT, VariantValue: 27},
 				{VariantType: VAR_STRING, VariantValue: "pi"},
 			},
-			expectedError: fmt.Errorf("type error: argument of unacceptable type %q passed to %q", "VAR_STRING", "test"),
+			expectedError: buildUnacceptableTypeError(VAR_STRING, "test"),
 		},
 	}
 
@@ -316,21 +318,21 @@ func TestUnaryOpNumber(t *testing.T) {
 				{VariantType: VAR_INT, VariantValue: 2},
 				{VariantType: VAR_INT, VariantValue: 2},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("arity error: expected exactly 1 arguments for %q", "test")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildExactArityError(1, "test")},
 		},
 		{
 			desc: "invalid type - error",
 			input: []Variant{
-				{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("an error")},
+				{VariantType: VAR_ERROR, VariantValue: errRandom},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("an error")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: errRandom},
 		},
 		{
 			desc: "invalid type - string",
 			input: []Variant{
 				{VariantType: VAR_STRING, VariantValue: "pi"},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("type error: argument of unacceptable type %q passed to %q", "VAR_STRING", "test")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildUnacceptableTypeError(VAR_STRING, "test")},
 		},
 		{
 			desc: "success - int",
@@ -368,35 +370,35 @@ func TestUnaryOpNumber_ErrorPassback(t *testing.T) {
 				{VariantType: VAR_INT, VariantValue: 2},
 				{VariantType: VAR_INT, VariantValue: 2},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("arity error: expected exactly 1 arguments for %q", "test")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildExactArityError(1, "test")},
 		},
 		{
 			desc: "invalid type - error",
 			input: []Variant{
-				{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("an error")},
+				{VariantType: VAR_ERROR, VariantValue: errRandom},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("an error")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: errRandom},
 		},
 		{
 			desc: "invalid type - string",
 			input: []Variant{
 				{VariantType: VAR_STRING, VariantValue: "pi"},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("type error: argument of unacceptable type %q passed to %q", "VAR_STRING", "test")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildUnacceptableTypeError(VAR_STRING, "test")},
 		},
 		{
 			desc: "failure - int",
 			input: []Variant{
 				{VariantType: VAR_INT, VariantValue: int64(2)},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("domain error")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: errRandom},
 		},
 		{
 			desc: "failure - float",
 			input: []Variant{
 				{VariantType: VAR_FLOAT, VariantValue: float64(2.71828)},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("domain error")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: errRandom},
 		},
 	}
 
@@ -404,8 +406,8 @@ func TestUnaryOpNumber_ErrorPassback(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			v := unaryOpNumber(
 				test.input,
-				func(a int64) (int64, error) { return a, fmt.Errorf("domain error") },
-				func(a float64) (float64, error) { return a, fmt.Errorf("domain error") },
+				func(a int64) (int64, error) { return a, errRandom },
+				func(a float64) (float64, error) { return a, errRandom },
 				"test")
 			assert.Equal(t, test.expected, v, "fail")
 		})
@@ -423,7 +425,7 @@ func TestBinaryOpNumber(t *testing.T) {
 			input: []Variant{
 				{VariantType: VAR_INT, VariantValue: 2},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("arity error: expected exactly 2 arguments for %q", "test")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildExactArityError(2, "test")},
 		},
 		{
 			desc: "incorrect arity - 3",
@@ -432,21 +434,21 @@ func TestBinaryOpNumber(t *testing.T) {
 				{VariantType: VAR_INT, VariantValue: 2},
 				{VariantType: VAR_INT, VariantValue: 2},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("arity error: expected exactly 2 arguments for %q", "test")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildExactArityError(2, "test")},
 		},
 		{
 			desc: "invalid type - error",
 			input: []Variant{
-				{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("an error")},
+				{VariantType: VAR_ERROR, VariantValue: errRandom},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("an error")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: errRandom},
 		},
 		{
 			desc: "invalid type - string",
 			input: []Variant{
 				{VariantType: VAR_STRING, VariantValue: "pi"},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("type error: argument of unacceptable type %q passed to %q", "VAR_STRING", "test")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildUnacceptableTypeError(VAR_STRING, "test")},
 		},
 		{
 			desc: "success - int",
@@ -490,35 +492,35 @@ func TestBinaryOpNumber_ErrorPassback(t *testing.T) {
 				{VariantType: VAR_INT, VariantValue: 2},
 				{VariantType: VAR_INT, VariantValue: 2},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("arity error: expected exactly 1 arguments for %q", "test")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildExactArityError(1, "test")},
 		},
 		{
 			desc: "invalid type - error",
 			input: []Variant{
-				{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("an error")},
+				{VariantType: VAR_ERROR, VariantValue: errRandom},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("an error")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: errRandom},
 		},
 		{
 			desc: "invalid type - string",
 			input: []Variant{
 				{VariantType: VAR_STRING, VariantValue: "pi"},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("type error: argument of unacceptable type %q passed to %q", "VAR_STRING", "test")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: buildUnacceptableTypeError(VAR_STRING, "test")},
 		},
 		{
 			desc: "failure - int",
 			input: []Variant{
 				{VariantType: VAR_INT, VariantValue: int64(2)},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("domain error")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: errRandom},
 		},
 		{
 			desc: "failure - float",
 			input: []Variant{
 				{VariantType: VAR_FLOAT, VariantValue: float64(2.71828)},
 			},
-			expected: Variant{VariantType: VAR_ERROR, VariantValue: fmt.Errorf("domain error")},
+			expected: Variant{VariantType: VAR_ERROR, VariantValue: errRandom},
 		},
 	}
 
@@ -526,8 +528,8 @@ func TestBinaryOpNumber_ErrorPassback(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			v := unaryOpNumber(
 				test.input,
-				func(a int64) (int64, error) { return a, fmt.Errorf("domain error") },
-				func(a float64) (float64, error) { return a, fmt.Errorf("domain error") },
+				func(a int64) (int64, error) { return a, errRandom },
+				func(a float64) (float64, error) { return a, errRandom },
 				"test")
 			assert.Equal(t, test.expected, v, "fail")
 		})
