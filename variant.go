@@ -48,6 +48,14 @@ type Variant struct {
 	VariantValue interface{}
 }
 
+func (b *Variant) MakeConsistent() Variant {
+	if v, e := b.GetTypeConsistentValue(); e != nil {
+		return Variant{VariantType: VAR_ERROR, VariantValue: e}
+	} else {
+		return Variant{VariantType: b.VariantType, VariantValue: v}
+	}
+}
+
 func (b *Variant) GetTypeConsistentValue() (interface{}, error) {
 	switch b.VariantType {
 	case VAR_UNKNOWN:

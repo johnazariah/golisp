@@ -3,11 +3,13 @@ package golisp
 type FunctionType func([]Variant) Variant
 type FunctionTable map[string]FunctionType
 
+type SymbolTable map[string]Variant
+
 type EvaluationContext struct {
 	EvaluatedValue Variant
 	Parent         *EvaluationContext
 	FunctionTable  FunctionTable
-	SymbolTable    map[string]Variant
+	SymbolTable    SymbolTable
 }
 
 func (ctx *EvaluationContext) resolveIdentifier(identifierName string) Variant {
@@ -30,13 +32,15 @@ func loadDefaultLibraries(functions FunctionTable) FunctionTable {
 	return functions
 }
 
-func NewEvaluationContext(parent *EvaluationContext) *EvaluationContext {
-	functions := loadDefaultLibraries(FunctionTable{})
+func loadDefaultSymbols(symbols SymbolTable) SymbolTable {
+	return symbols
+}
 
+func NewEvaluationContext(parent *EvaluationContext) *EvaluationContext {
 	return &EvaluationContext{
 		Parent:         parent,
-		FunctionTable:  functions,
-		SymbolTable:    map[string]Variant{},
+		FunctionTable:  loadDefaultLibraries(FunctionTable{}),
+		SymbolTable:    loadDefaultSymbols(SymbolTable{}),
 		EvaluatedValue: Variant{VariantType: VAR_UNKNOWN},
 	}
 }
@@ -55,12 +59,17 @@ func (p *atom) Eval(ctx *EvaluationContext) *EvaluationContext {
 			ctx.EvaluatedValue = ctx.resolveIdentifier(v)
 		}
 	default:
-		ctx.EvaluatedValue = p.typedValue
+		ctx.EvaluatedValue = p.typedValue.MakeConsistent()
 	}
 	return ctx
 }
 
 func (p *list) Eval(ctx *EvaluationContext) *EvaluationContext {
+	if len(p.children) == 0 {
+		ctx.EvaluatedValue = Variant{VariantType: VAR_NULL}
+		return ctx
+	}
+
 	v := p.children[0].Eval(ctx).EvaluatedValue
 
 	switch v.VariantType {

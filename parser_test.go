@@ -17,6 +17,7 @@ func TestParser(t *testing.T) {
 		{desc: "whitespace string", input: " ", success: "NIL"},
 		{desc: "numeric literal", input: "1", success: "1"},
 		{desc: "identifier literal", input: "a", success: "a"},
+		{desc: "date literal", input: "11/11/1974", success: "11/11/1974"},
 		{desc: "quoted raw string", input: `"Now is the time"`, success: `"Now is the time"`},
 		{desc: "quoted string", input: "\"Now is the time\"", success: "\"Now is the time\""},
 		{desc: "valid list", input: "(+ 1 2)", success: "(+ 1 2)"},

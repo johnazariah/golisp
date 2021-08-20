@@ -131,16 +131,17 @@ func (ctx *tokenizerContext) read_QUOTEDSTRING() *token {
 	return nil
 }
 
+// JOHNAZ-TODO : Handle nested comments here
 func (ctx *tokenizerContext) read_COMMENT() *token {
-	if !(strings.HasPrefix(ctx.code[ctx.idx:], "/*")) {
+	if !(strings.HasPrefix(ctx.code[ctx.idx:], "(*")) {
 		return nil
 	}
 
 	start := ctx.idx
 	runecount := utf8.RuneCountInString(ctx.code)
 
-	for curr := start; curr < runecount; curr++ {
-		if strings.HasSuffix(ctx.code[start:curr], "*/") {
+	for curr := start; curr <= runecount; curr++ {
+		if strings.HasSuffix(ctx.code[start:curr], "*)") {
 			ctx.idx = curr
 			return &token{start: start, finish: curr, tokenType: TOK_COMMENT}
 		}
@@ -172,9 +173,9 @@ func (ctx *tokenizerContext) read_SYMBOL() *token {
 
 func (ctx *tokenizerContext) NextToken() *token {
 	tokenizerFuncs := [...](func() *token){
+		ctx.read_COMMENT,
 		ctx.read_LPARAM,
 		ctx.read_RPARAM,
-		ctx.read_COMMENT,
 		ctx.read_QUOTEDSTRING,
 		ctx.read_SYMBOL,
 	}

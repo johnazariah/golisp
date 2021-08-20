@@ -337,14 +337,14 @@ func TestUnaryOpNumber(t *testing.T) {
 		{
 			desc: "success - int",
 			input: []Variant{
-				{VariantType: VAR_INT, VariantValue: int64(2)},
+				{VariantType: VAR_INT, VariantValue: 2},
 			},
 			expected: Variant{VariantType: VAR_INT, VariantValue: int64(2)},
 		},
 		{
 			desc: "success - float",
 			input: []Variant{
-				{VariantType: VAR_FLOAT, VariantValue: float64(2.71828)},
+				{VariantType: VAR_FLOAT, VariantValue: 2.71828},
 			},
 			expected: Variant{VariantType: VAR_FLOAT, VariantValue: float64(2.71828)},
 		},
@@ -389,14 +389,14 @@ func TestUnaryOpNumber_ErrorPassback(t *testing.T) {
 		{
 			desc: "failure - int",
 			input: []Variant{
-				{VariantType: VAR_INT, VariantValue: int64(2)},
+				{VariantType: VAR_INT, VariantValue: 2},
 			},
 			expected: Variant{VariantType: VAR_ERROR, VariantValue: errRandom},
 		},
 		{
 			desc: "failure - float",
 			input: []Variant{
-				{VariantType: VAR_FLOAT, VariantValue: float64(2.71828)},
+				{VariantType: VAR_FLOAT, VariantValue: 2.71828},
 			},
 			expected: Variant{VariantType: VAR_ERROR, VariantValue: errRandom},
 		},
@@ -453,8 +453,8 @@ func TestBinaryOpNumber(t *testing.T) {
 		{
 			desc: "success - int",
 			input: []Variant{
-				{VariantType: VAR_INT, VariantValue: int64(2)},
-				{VariantType: VAR_INT, VariantValue: int64(2)},
+				{VariantType: VAR_INT, VariantValue: 2},
+				{VariantType: VAR_INT, VariantValue: 2},
 			},
 			expected: Variant{VariantType: VAR_INT, VariantValue: int64(4)},
 		},
@@ -511,7 +511,7 @@ func TestBinaryOpNumber_ErrorPassback(t *testing.T) {
 		{
 			desc: "failure - int",
 			input: []Variant{
-				{VariantType: VAR_INT, VariantValue: int64(2)},
+				{VariantType: VAR_INT, VariantValue: 2},
 			},
 			expected: Variant{VariantType: VAR_ERROR, VariantValue: errRandom},
 		},

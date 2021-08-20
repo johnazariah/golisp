@@ -23,12 +23,14 @@ func TestTokenizer(t *testing.T) {
 		{input: "1", expected: []TokenizerTestResult{{tokenType: TOK_SYMBOL, value: "1"}}},
 		{input: "123x", expected: []TokenizerTestResult{{tokenType: TOK_SYMBOL, value: "123x"}}},
 		{input: "a123x", expected: []TokenizerTestResult{{tokenType: TOK_SYMBOL, value: "a123x"}}},
+		{input: "11/11/1999", expected: []TokenizerTestResult{{tokenType: TOK_SYMBOL, value: "11/11/1999"}}},
 		{input: " ( 1 2 3 4 ) ", expected: []TokenizerTestResult{{tokenType: TOK_LPAREN}, {tokenType: TOK_SYMBOL, value: "1"}, {tokenType: TOK_SYMBOL, value: "2"}, {tokenType: TOK_SYMBOL, value: "3"}, {tokenType: TOK_SYMBOL, value: "4"}, {tokenType: TOK_RPAREN}}},
 		{input: "(1 2 3 4)", expected: []TokenizerTestResult{{tokenType: TOK_LPAREN}, {tokenType: TOK_SYMBOL, value: "1"}, {tokenType: TOK_SYMBOL, value: "2"}, {tokenType: TOK_SYMBOL, value: "3"}, {tokenType: TOK_SYMBOL, value: "4"}, {tokenType: TOK_RPAREN}}},
 		{input: "(a a a a)", expected: []TokenizerTestResult{{tokenType: TOK_LPAREN}, {tokenType: TOK_SYMBOL, value: "a"}, {tokenType: TOK_SYMBOL, value: "a"}, {tokenType: TOK_SYMBOL, value: "a"}, {tokenType: TOK_SYMBOL, value: "a"}, {tokenType: TOK_RPAREN}}},
 		{input: "(() )", expected: []TokenizerTestResult{{tokenType: TOK_LPAREN}, {tokenType: TOK_LPAREN}, {tokenType: TOK_RPAREN}, {tokenType: TOK_RPAREN}}},
 		{input: "(\"this and that\")", expected: []TokenizerTestResult{{tokenType: TOK_LPAREN}, {tokenType: TOK_QUOTEDSTRING, value: "\"this and that\""}, {tokenType: TOK_RPAREN}}},
-		{input: "(/* this is a comment */)", expected: []TokenizerTestResult{{tokenType: TOK_LPAREN}, {tokenType: TOK_COMMENT, value: "/* this is a comment */"}, {tokenType: TOK_RPAREN}}},
+		{input: "(* this is a comment *)", expected: []TokenizerTestResult{{tokenType: TOK_COMMENT, value: "(* this is a comment *)"}}},
+		{input: "((* this is a comment *))", expected: []TokenizerTestResult{{tokenType: TOK_LPAREN}, {tokenType: TOK_COMMENT, value: "(* this is a comment *)"}, {tokenType: TOK_RPAREN}}},
 	}
 
 	for _, test := range tests {
