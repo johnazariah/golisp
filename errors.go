@@ -62,10 +62,6 @@ func buildFunctionNameNotFoundError(identifier string) error {
 	return fmt.Errorf("scope error: requested function %q not found", identifier)
 }
 
-func buildInvalidFunctionNameError(identifier string) error {
-	return fmt.Errorf("eval error: %q is not a valid function name", identifier)
-}
-
 func buildDivideByZeroError() error {
 	return fmt.Errorf("math error: attempt to divide by zero")
 }

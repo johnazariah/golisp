@@ -17,6 +17,7 @@ const (
 	VAR_STRING
 	VAR_IDENT
 	VAR_ERROR
+	VAR_FUNCTION
 	VAR_MAX
 )
 
@@ -31,6 +32,7 @@ func (t EnumVariantType) String() string {
 		"VAR_STRING",
 		"VAR_IDENT",
 		"VAR_ERROR",
+		"VAR_FUNCTION",
 		"VAR_MAX",
 	}
 
@@ -223,7 +225,7 @@ func (b *Variant) GetTypeConsistentValue() (interface{}, error) {
 			return nil, buildInconsistentTypeError(b.VariantValue, b.VariantType)
 		}
 
-	case VAR_MAX:
+	default:
 		break
 	}
 
@@ -255,7 +257,7 @@ func (b *Variant) ToDebugString() string {
 		return v.(string)
 	case VAR_ERROR:
 		return v.(error).Error()
-	case VAR_MAX:
+	default:
 		break
 	}
 

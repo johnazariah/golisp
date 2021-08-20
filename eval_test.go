@@ -7,6 +7,11 @@ import (
 )
 
 func TestEval(t *testing.T) {
+
+	context := NewEvaluationContext(nil)
+	context.SymbolTable["known_symbol_string"] = Variant{VariantType: VAR_STRING, VariantValue: "A Known Symbol"}
+	context.SymbolTable["x"] = Variant{VariantType: VAR_INT, VariantValue: int64(22)}
+
 	tests := [...]struct {
 		desc     string
 		input    string
@@ -15,7 +20,9 @@ func TestEval(t *testing.T) {
 		{desc: "atom: empty string", input: "", expected: Variant{VariantType: VAR_NULL}},
 		{desc: "atom: whitespace string", input: " ", expected: Variant{VariantType: VAR_NULL}},
 		{desc: "atom: numeric literal", input: "1", expected: Variant{VariantType: VAR_INT, VariantValue: int64(1)}},
-		{desc: "atom: identifier literal", input: "a", expected: Variant{VariantType: VAR_IDENT, VariantValue: "a"}},
+		{desc: "atom: unknown identifier literal", input: "a", expected: Variant{VariantType: VAR_ERROR, VariantValue: buildUnresolvedIdentifierError("a")}},
+		{desc: "atom: known identifier literal", input: "x", expected: Variant{VariantType: VAR_INT, VariantValue: int64(22)}},
+		{desc: "atom: known identifier literal", input: "known_symbol_string", expected: Variant{VariantType: VAR_STRING, VariantValue: "A Known Symbol"}},
 		{desc: "atom: quoted raw string", input: `"Now is the time"`, expected: Variant{VariantType: VAR_STRING, VariantValue: "Now is the time"}},
 		{desc: "atom: quoted string", input: "\"Now is the time\"", expected: Variant{VariantType: VAR_STRING, VariantValue: "Now is the time"}},
 		{desc: "add two ints", input: "(+ 1 2)", expected: Variant{VariantType: VAR_INT, VariantValue: int64(3)}},
@@ -34,10 +41,12 @@ func TestEval(t *testing.T) {
 		{desc: "or nested - true", input: "(or (or 1 t) (or T TRUE (or true True)))", expected: Variant{VariantType: VAR_BOOL, VariantValue: true}},
 		{desc: "concat two strings", input: "(concat \"Hello, \" \"World!\")", expected: Variant{VariantType: VAR_STRING, VariantValue: "Hello, World!"}},
 		{desc: "concat two strings and an int", input: "(++ \"Hello, \" \"Competitor \" 27 \"!\")", expected: Variant{VariantType: VAR_STRING, VariantValue: "Hello, Competitor 27!"}},
-		{desc: "invalid type", input: "(or 3.1415 today)", expected: Variant{VariantType: VAR_ERROR, VariantValue: buildUnacceptableTypeError(VAR_FLOAT, "or")}},
-		{desc: "unresolved identifier", input: "(or yesterday today)", expected: Variant{VariantType: VAR_ERROR, VariantValue: buildUnresolvedIdentifierError("yesterday")}},
-		{desc: "invalid function", input: "(+ (1) (2))", expected: Variant{VariantType: VAR_ERROR, VariantValue: buildInvalidFunctionNameError("1")}},
 		{desc: "unknown symbol", input: "(+ 1 2 a)", expected: Variant{VariantType: VAR_ERROR, VariantValue: buildUnresolvedIdentifierError("a")}},
+		{desc: "known symbol", input: "(+ 1 2 x)", expected: Variant{VariantType: VAR_INT, VariantValue: int64(25)}},
+		{desc: "known symbol - nested", input: "(+ 1 2 (+ 5 x))", expected: Variant{VariantType: VAR_INT, VariantValue: int64(30)}},
+		{desc: "invalid type", input: "(or 3.1415 today)", expected: Variant{VariantType: VAR_ERROR, VariantValue: buildUnacceptableTypeError(VAR_FLOAT, "or")}},
+		{desc: "invalid function", input: "(+ (1) (2))", expected: Variant{VariantType: VAR_ERROR, VariantValue: buildFunctionNameNotFoundError("1")}},
+		{desc: "unresolved identifier", input: "(or yesterday today)", expected: Variant{VariantType: VAR_ERROR, VariantValue: buildUnresolvedIdentifierError("yesterday")}},
 	}
 
 	for _, test := range tests {
@@ -45,7 +54,7 @@ func TestEval(t *testing.T) {
 			sexpr, e := Parse(test.input)
 			assert.Nil(t, e, "parse error")
 
-			ctx := sexpr.Eval(NewEvaluationContext(nil))
+			ctx := sexpr.Eval(context)
 			assert.Equal(t, test.expected, ctx.EvaluatedValue)
 		})
 	}

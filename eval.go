@@ -10,6 +10,19 @@ type EvaluationContext struct {
 	SymbolTable    map[string]Variant
 }
 
+func (ctx *EvaluationContext) resolveIdentifier(identifierName string) Variant {
+	if ctx == nil {
+		return Variant{VariantType: VAR_ERROR, VariantValue: buildUnresolvedIdentifierError(identifierName)}
+	}
+	if v, e := ctx.SymbolTable[identifierName]; e {
+		return v
+	}
+	if v, e := ctx.FunctionTable[identifierName]; e {
+		return Variant{VariantType: VAR_FUNCTION, VariantValue: v}
+	}
+	return ctx.Parent.resolveIdentifier(identifierName)
+}
+
 func loadDefaultLibraries(functions FunctionTable) FunctionTable {
 	functions = (&ArithmeticLibrary{}).InjectFunctions(functions)
 	functions = (&LogicalLibrary{}).InjectFunctions(functions)
@@ -34,15 +47,24 @@ func (p *null) Eval(ctx *EvaluationContext) *EvaluationContext {
 }
 
 func (p *atom) Eval(ctx *EvaluationContext) *EvaluationContext {
-	ctx.EvaluatedValue = p.typedValue
+	switch p.typedValue.VariantType {
+	case VAR_IDENT:
+		if v, e := p.typedValue.GetIdentifierValue(); e != nil {
+			ctx.EvaluatedValue = Variant{VariantType: VAR_ERROR, VariantValue: e}
+		} else {
+			ctx.EvaluatedValue = ctx.resolveIdentifier(v)
+		}
+	default:
+		ctx.EvaluatedValue = p.typedValue
+	}
 	return ctx
 }
 
 func (p *list) Eval(ctx *EvaluationContext) *EvaluationContext {
 	v := p.children[0].Eval(ctx).EvaluatedValue
-	if functionName, err := v.GetIdentifierValue(); err != nil {
-		ctx.EvaluatedValue = Variant{VariantType: VAR_ERROR, VariantValue: buildInvalidFunctionNameError(v.ToDebugString())}
-	} else {
+
+	switch v.VariantType {
+	case VAR_FUNCTION:
 		functionArgs := []Variant{}
 
 		for _, v := range p.children[1:] {
@@ -54,12 +76,10 @@ func (p *list) Eval(ctx *EvaluationContext) *EvaluationContext {
 			}
 		}
 
-		function, found := ctx.FunctionTable[functionName]
-		if found {
-			ctx.EvaluatedValue = function(functionArgs)
-		} else {
-			ctx.EvaluatedValue = Variant{VariantType: VAR_ERROR, VariantValue: buildFunctionNameNotFoundError(v.ToDebugString())}
-		}
+		function := v.VariantValue.(FunctionType)
+		ctx.EvaluatedValue = function(functionArgs)
+	default:
+		ctx.EvaluatedValue = Variant{VariantType: VAR_ERROR, VariantValue: buildFunctionNameNotFoundError(v.ToDebugString())}
 	}
 
 	return ctx
